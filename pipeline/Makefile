@@ -21,7 +21,6 @@ podar-paired: podar \
 	trim-at-N \
 	podar-mapped \
 	podar-reads.sam.pos \
-	podar-dn-report.txt \
 	podar-mapped.fq.gz.abundtrim \
 	podar-compare5-pre.txt \
 	podar-abundtrim.sam \
@@ -32,7 +31,6 @@ mouse-paired: mouse \
 	trim-at-N \
 	mouse-mapped  \
 	mouse-reads.sam.pos \
-	mouse-dn-report.txt \
 	mouse-mapped.fq.gz.abundtrim \
 	mouse-compare5-pre.txt \
 	mouse-abundtrim.sam \
@@ -69,9 +67,6 @@ podar-mapped: podar-1.fastq.gz podar-reads-sam
 podar-reads.sam.pos: podar-reads.sam podar-ref.fa
 	./sam-scan.py podar-ref.fa podar-reads.sam > podar-reads.sam.pos
 
-podar-dn-report.txt: podar-mapped.fq.gz 
-	normalize-by-median.py -x 4e8 -N 4 -k 20 -C 20 -s podar.dn.kh podar-mapped.fq.gz -R podar-dn-report.txt
-
 podar-mapped.fq.gz.abundtrim: podar-mapped.fq.gz 
 	/mnt/khmer/sandbox/trim-low-abund.py -V -k 20 -Z 20 -C 3 -x 4e8 -N 4 podar-mapped.fq.gz	
 
@@ -101,9 +96,6 @@ mouse-mapped: mouse-l.fastq.gz mouse-reads-sam
 
 mouse-reads.sam.pos: mouse-reads.sam mouse-ref.fa
         ./sam-scan.py mouse-ref.fa mouse-reads.sam > mouse-reads.sam.pos
-
-mouse-dn-report.txt: mouse-mapped.fq.gz
-        normalize-by-median.py -x 4e8 -N 4 -k 20 -C 20 -s mouse.dn.kh mouse-mapped.fq.gz -R mouse-dn-report.txt
 
 mouse-mapped.fq.gz.abundtrim: mouse-mapped.fq.gz
         /mnt/khmer/sandbox/trim-low-abund.py -V -k 20 -Z 20 -C 3 -x 4e8 -N 4 mouse-mapped.fq.gz 
