@@ -1,7 +1,7 @@
 #TODO - put in spot checks for the trickier scripts!
 
 NULLGRAPH=~/dev/nullgraph
-KHMER=~/dev/khmer
+KHMER=/mnt/khmer
 
 all: compare mcompare compare3 mcompare3 rcompare rcompare3 bam \
 	compare4 mcompare4 rcompare4 compare5 compare6 \
@@ -16,6 +16,26 @@ all: compare mcompare compare3 mcompare3 rcompare rcompare3 bam \
 
 bam: simple-genome-reads.sorted.bam simple-metagenome-reads.sorted.bam \
 	mrna-reads.sorted.bam
+
+podar-paired: podar \
+	trim-at-N \
+	podar-mapped \
+	podar-reads.sam.pos \
+	podar-mapped.fq.gz.abundtrim \
+	podar-compare5-pre.txt \
+	podar-abundtrim.sam \
+	podar-abundtrim.sam.pos \
+	podar-compare5-post.txt
+
+mouse-paired: mouse \
+	trim-at-N \
+	mouse-mapped  \
+	mouse-reads.sam.pos \
+	mouse-mapped.fq.gz.abundtrim \
+	mouse-compare5-pre.txt \
+	mouse-abundtrim.sam \
+	mouse-abundtrim.sam.pos \
+	mouse-compare5-post.txt
 
 clean:
 	-rm -f simple-genome.fa simple-genome-reads.dn.kh simple-genome-reads.sam
@@ -32,7 +52,67 @@ include makefile.simple-metagenome
 include makefile.mrna
 
 #####
+#--------------------------------------Podar Work--------------------
+podar: podar-1.fastq.gz  podar-ref.fa
+	bowtie2-build podar-ref.fa podar \
+	samtools faidx podar-ref.fa 
 
+trim-at-N: podar 
+	./trim-at-N.py podar-1.fastq.gz | bowtie2 -p 4 -x podar -U - -S podar-reads.sam 
+
+podar-mapped: podar-1.fastq.gz podar-reads-sam 
+	./extract-sam-seqs-to-fq.py podar-reads.sam podar-1.fastq.gz > sam-seq \
+	gzip -c sam-seq  > podar-mapped.fq.gz
+
+podar-reads.sam.pos: podar-reads.sam podar-ref.fa
+	./sam-scan.py podar-ref.fa podar-reads.sam > podar-reads.sam.pos
+
+podar-mapped.fq.gz.abundtrim: podar-mapped.fq.gz 
+	/mnt/khmer/sandbox/trim-low-abund.py -V -k 20 -Z 20 -C 3 -x 4e8 -N 4 podar-mapped.fq.gz	
+
+podar-compare5-pre.txt: podar-mapped.fq.gz
+	./summarize-pos-file.py podar-reads.sam.pos podar-mapped.fq.gz > podar-compare5-pre.txt
+
+podar-abundtrim.sam: podar-mapped.fq.gz.abundtrim
+	bowtie2 -p 4 -x podar -U podar-mapped.fq.gz.abundtrim -S podar-abundtrim.sam
+
+podar-abundtrim.sam.pos: podar-abundtrim.sam
+	./sam-scan.py podar-ref.fa podar-abundtrim.sam > podar-abundtrim.sam.pos 
+	
+podar-compare5-post.txt: podar-abundtrim.sam.pos podar-mapped.fq.gz.abundtrim
+	./summarize-pos-file.py podar-abundtrim.sam.pos podar-mapped.fq.gz.abundtrim > podar-compare5-post.txt 
+
+#---------------------------------------Mouse  Work--------------
+mouse: mouse.fastq.gz mouse-ref.fa
+	bowtie2-build mouse-ref.fa mouse \
+	samtools faidx mouse-ref.fa 
+
+trim-at-N: mouse
+        ./trim-at-N.py mouse-l.fastq.gz | bowtie2 -p 4 -x mouse -U - -S mouse-reads.sam 
+
+mouse-mapped: mouse-l.fastq.gz mouse-reads-sam
+        ./extract-sam-seqs-to-fq.py mouse-reads.sam mouse-l.fastq.gz > sam-seq \
+        gzip -c sam-seq  > mouse-mapped.fq.gz
+
+mouse-reads.sam.pos: mouse-reads.sam mouse-ref.fa
+        ./sam-scan.py mouse-ref.fa mouse-reads.sam > mouse-reads.sam.pos
+
+mouse-mapped.fq.gz.abundtrim: mouse-mapped.fq.gz
+        /mnt/khmer/sandbox/trim-low-abund.py -V -k 20 -Z 20 -C 3 -x 4e8 -N 4 mouse-mapped.fq.gz 
+
+mouse-compare5-pre.txt: mouse-mapped.fq.gz
+        ./summarize-pos-file.py mouse-reads.sam.pos mouse-mapped.fq.gz > mouse-compare5-pre.txt
+
+mouse-abundtrim.sam: mouse-mapped.fq.gz.abundtrim
+        bowtie2 -p 4 -x mouse -U mouse-mapped.fq.gz.abundtrim -S mouse-abundtrim.sam
+
+mouse-abundtrim.sam.pos: mouse-abundtrim.sam
+        ./sam-scan.py mouse-ref.fa mouse-abundtrim.sam > mouse-abundtrim.sam.pos 
+        
+mouse-compare5-post.txt: mouse-abundtrim.sam.pos mouse-mapped.fq.gz.abundtrim
+        ./summarize-pos-file.py mouse-abundtrim.sam.pos mouse-mapped.fq.gz.abundtrim > mouse-compare5-post.txt
+
+#--------------------------------------------------
 ecoli1: ecoli-report.txt ecoli-report-nodn.txt
 
 # bowtie index for ecoliMG1655.fa

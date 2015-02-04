@@ -1,0 +1,48 @@
+PODAR_COV=20
+
+podar:  podar.1.bt2 \
+	podar_compare2.txt podar_compare4.txt podar_compare5 podar_compare5b
+
+podar.1.bt2: podar-ref.fa
+	bowtie2-build podar-ref.fa podar
+	samtools faidx podar-ref.fa
+
+podar-reads.sam: podar-1.fastq.gz podar.1.bt2
+	./trim-at-N.py podar-1.fastq.gz >p1.fastq
+	./trim-at-N.py podar-2.fastq.gz >p2.fastq
+	gzip -c p1.fastq >p1.fastq.gz
+	gzip -c p2.fastq >p2.fastq.gz
+	bowtie2 -p 4 -x podar -1 p1.fastq.gz -2 p2.fastq.gz -S podar-reads.sam
+
+
+podar-mapped.fq.gz: podar-reads.sam
+	./extract-sam-seqs-to-fq.py podar-reads.sam p1.fastq.gz > sam-seq-1   
+	./extract-sam-seqs-to-fq.py podar-reads.sam p2.fastq.gz > sam-seq-2 
+ 	cat sam-seq-1 sam-seq-2 >sam-seq
+	gzip sam-seq >podar-mapped.fq.gz
+
+podar-reads.sam.pos: podar-reads.sam
+	./sam-scan.py podar-ref.fa podar-reads.sam > podar-reads.sam.pos
+
+podar.dn.kh: podar-mapped.fq.gz
+	 normalize-by-median.py -x 4e8 -N 4 -k 20 -C $(PODAR_COV) -s podar.dn.kh podar-mapped.fq.gz -R podar-dn-report.txt
+
+podar-mapped.fq.gz.abundtrim: podar-mapped.fq.gz
+	$(KHMER)/sandbox/trim-low-abund.py -V -k 20 -Z $(PODAR_COV) -C 3 -x 4e9 -N 4 podar-mapped.fq.gz
+
+podar-abundtrim.sam: podar-mapped.fq.gz.abundtrim
+	bowtie2 -p 4 -x podar -U podar-mapped.fq.gz.abundtrim -S podar-abundtrim.sam
+
+podar-abundtrim.sam.pos: podar-abundtrim.sam
+	./sam-scan.py podar-ref.fa podar-abundtrim.sam > podar-abundtrim.sam.pos
+
+podar_compare5_pre.txt: podar-reads.sam.pos podar-mapped.fq.gz
+	./summarize-pos-file.py podar-reads.sam.pos podar-mapped.fq.gz > podar_compare5_pre.txt
+
+podar_compare5_post.txt: podar-abundtrim.sam.pos podar-mapped.fq.gz.abundtrim
+	./summarize-pos-file.py podar-abundtrim.sam.pos podar-mapped.fq.gz.abundtrim > podar_compare5_post.txt
+
+podar_compare5: podar_compare5_pre.txt podar_compare5_post.txt
+	cat podar_compare5_pre.txt podar_compare5_post.txt
+
+
