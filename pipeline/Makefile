@@ -51,7 +51,6 @@ include makefile.simple-metagenome
 ##### simple mrna molecule with three isoforms (1234, 124, 134)
 include makefile.mrna
 
-#####
 #--------------------------------------Podar Work--------------------
 podar: podar-1.fastq.gz  podar-ref.fa
 	bowtie2-build podar-ref.fa podar \
