@@ -67,7 +67,7 @@ podar-reads.sam.pos: podar-reads.sam podar-ref.fa
 	./sam-scan.py podar-ref.fa podar-reads.sam > podar-reads.sam.pos
 
 podar-mapped.fq.gz.abundtrim: podar-mapped.fq.gz 
-	/mnt/khmer/sandbox/trim-low-abund.py -V -k 20 -Z 20 -C 3 -x 4e8 -N 4 podar-mapped.fq.gz	
+	/mnt/khmer/sandbox/trim-low-abund.py -V -k 20 -Z 20 -C 3 -x 4e9 -N 4 podar-mapped.fq.gz	
 
 podar-compare5-pre.txt: podar-mapped.fq.gz
 	./summarize-pos-file.py podar-reads.sam.pos podar-mapped.fq.gz > podar-compare5-pre.txt
