@@ -5,6 +5,8 @@
 \usepackage{graphicx}
 \bibliographystyle{plos2009}
 
+\usepackage{lineno}
+\linenumbers
 
 \begin{document}
 
@@ -141,6 +143,8 @@ HyperLogLog cardinality counting algorithm \cite{hll}.  The
 implementation used is implemented in khmer, script {\tt
   sandbox/unique-kmers.py}, using the default error rate of 0.01.
 
+
+
 \subsection{K-mer spectral analysis}
 
 All spectral error analysis was done by finding the beginning and end
@@ -150,15 +154,15 @@ used a low-abundance cutoff of 10.  These cutoffs were chosen by
 examining the k-mer abundance plot (Figure~\ref{fig:spectrum}).
 
 Spectral error analysis was implemented in the khmer module Python
-function {\tt find\_spectral\_error\_positions}. We used {\tt
+function {\tt find\_spectral\_error\_positions}. We used\\ {\tt
   report-errors-by-read.py} to predict errors on normalized data, and
-{\tt calc-errors-few-pass.py} to do semi-streaming error analysis;
+\\{\tt calc-errors-few-pass.py} to do semi-streaming error analysis;
 both scripts are in {\tt 2014-streaming/pipeline/}.  Variable coverage
 error analysis was enabled with the {\tt -V} parameter to both scripts.
 
 \subsection{Digital normalization}
 
-We ran digital normalization on all data sets using khmer's {\tt
+We ran digital normalization on all data sets using khmer's \\{\tt
   normalize-by-median.py} script, with a k-mer size of 20 and a target
 coverage of 20; these parameters have been shown to yield good
 performance for assembly prefiltering \cite{Brown2012,Lowe2015}.
@@ -171,7 +175,7 @@ chosen for each data set so that the false positive rate was under
 \subsection{Read mapping and error correction}
 
 We used Quake v0.3.5, Jellyfish 1.1.11, Boost 1.57.0, and bowtie2
-v2.1.0 to generate results \cite{quake,jellyfish,bowtie2}.  {\tt bowtie2} was run with
+v2.1.0 to generate results \cite{quake,jellyfish,schaling2011boost,bowtie2}. {\tt bowtie2} was run with
 default parameters.  Quake's {\tt count-qmers} was used to generate a
 k-mer count with {\tt -q 33 -k 14}, and {\tt correct} was also run
 with {\tt -q 33 -k 14}.  The correction threshold ({\tt -c}) was
@@ -189,7 +193,7 @@ k-mer cutoff of 3.
 The khmer script {\tt trim-low-abund.py} was used for semi-streaming
 error trimming, with the same parameters as above.  The khmer script
 {\tt calc-error-profile.py} was used for sublinear time and space
-error analysis with default parameters.  The pipeline script {\tt
+error analysis with default parameters.  The pipeline script \\{\tt
   report-errhist-2pass.py} was used for comparison purposes.
 
 The {\tt calc-error-profile.py} script iterates through the read data
@@ -415,7 +419,7 @@ Per-base error rate              & 0.011\%     & 0.009\% \\
 \centering
 \begin{tabular}{|l|c|c|c|c|}
 \hline
-Sample              & original M & normalized M \\
+Sample              & original unique k-mer count & normalized unique k-mer  count \\
 \hline
 {\em E. coli}       & 39,677,503 & 26,510,104 (67.8\%) \\
 mouse mRNAseq       & 54,177,799 & 48,058,631 (88.7\%) \\
@@ -431,13 +435,14 @@ mock metagenome     & 201,459,416  & 201,093,236 (99.8\%) \\
 \label{tab:kmer_counts}
 \end{table}
 
+
 % readstats.txt
 
 \begin{table}
 \centering
 \begin{tabular}{|l|c|c|c|c|}
 \hline
-Sample              & N reads    & N normalized reads \\
+Sample              & original read count    &  normalized read count \\
 \hline
 {\em E. coli}       & 4,863,836   & 1,609,639 (33.1\%) \\
 Mouse RNAseq        & 7,915,339   & 3,832,453 (48.4\%) \\
@@ -538,7 +543,7 @@ or greater.
 % make mcompare2
 
 \begin{table}
-\begin{tabular}{|l|c||c|}
+\begin{tabular}{|l|c|c|}
 \hline
                             & {\bf simple mRNAseq } & {\bf simple metagenome}\\
 \hline
@@ -842,7 +847,7 @@ Perfect detection (TP)   & 810,896   & 1,162,662 (+61,370 & 116,833  \\
 No errors (TN)           & 2,781,961 & 3,552,261  & 4,717,494 \\
 Miscalled errors (FP)    & 1,087,775 & 418,481    & 53,349 (-692)  \\
 Mispredicted errors (FP) & 177,914   & 30,856 (+8472)    & 49,737 (+5559)  \\
-Missed errors (FN)       & 5263 (-1227)     & 215,478 (-51,809  & 16,928  \\
+Missed errors (FN)       & 5263 (-1227)     & 215,478 (-51,809)  & 16,928  \\
 \hline
 Sensitivity            & 99.4\%      & 84.4\% (+4.0\%)     & 87.3\%  \\
 Specificity            & 68.7\%      & 88.8\%     & 97.9\%  \\
@@ -912,35 +917,6 @@ were eliminated, bringing the overall per-base error rate from 0.62\% to
 568 reads were removed, and 208 were trimmed, removing 19,507 of
 56,800 bases (34.34\%).  The initial error rate was 0.65\% and the
 final error rate was 0.07\%.
-
-% ecoli-report-untrim.txt, ecoli-report-trim.txt
-% rseq_compare5.txt
-% rseq_compare5b.txt
-% podar_
-% podar_compare5b
-
-\begin{table}
-\begin{tabular}{|l|c|c|c|c|}
-\hline
-Data set        & pre-trim error & \% bp trim & \% reads trim & post-trim error \\
-\hline
-{\em E. coli}   & 1.49\%         & 11.05\%          & 41.9\%      & 0.07\% \\
-\hline
-mouse mRNAseq   & 1.59\%         & 13.9\%           & 19.8\%      & 1.21\% \\
-(high coverage only) & 1.20\%    & 20.4\%           & 29.0\%      & 0.42\% \\
-\hline
-Mock metagenome & 0.31\%         & 0.4\%            & 1.1\%       & 0.28\% \\
-(high coverage only) & 0.16\%    & 1.4\%            & 3.5\%       & 0.07\% \\
-\hline
-\end{tabular}
-
-\caption{{\bf A summary of trimming statistics for semi-streaming
-    error trimming.  Error rates before and after trimming were
-    estimated by mapping. ``High coverage'' numbers refer to the
-    subset of reads with $C \geq 20$ that were subject to analysis.}}
-\label{tab:trimming}
-\end{table}
-
 \paragraph{Semi-streaming error trimming on real data:}
 
 % ecoli-report-untrim.txt ('make ecoli-report-untrim.txt')
@@ -973,7 +949,7 @@ Mbp of the original 486 Mbp (11.1\%).
 % make podar_compare5
 
 On the mouse mRNAseq data set, semi-streaming error trimming removed 919,327
-reads and trimmed 648,322 reads, removing 19.8% of the total bases,
+reads and trimmed 648,322 reads, removing 19.8\% of the total bases,
 bringing the overall error rate from 1.59\% to 1.21\%.  When we measured
 only the error rate in the high-coverage reads, trimming brought the
 error rate from 1.20\% to 0.42\%.  On the mock metagenome data set,
@@ -1087,12 +1063,43 @@ Table~\ref{tab:trimming}), when we consider the full data sets the
 majority of reads are examined only once (see ``Number of passes'',
 Table~\ref{tab:full_trimming}).
 
+
+% ecoli-report-untrim.txt, ecoli-report-trim.txt
+% rseq_compare5.txt
+% rseq_compare5b.txt
+% podar_
+% podar_compare5b
+
+\begin{table}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+Data set        & pre-trim error & \% bp trim & \% reads trim & post-trim error \\
+\hline
+{\em E. coli}   & 1.49\%         & 11.05\%          & 41.9\%      & 0.07\% \\
+\hline
+mouse mRNAseq   & 1.59\%         & 13.9\%           & 19.8\%      & 1.21\% \\
+(high coverage only) & 1.20\%    & 20.4\%           & 29.0\%      & 0.42\% \\
+\hline
+Mock metagenome & 0.31\%         & 0.4\%            & 1.1\%       & 0.28\% \\
+(high coverage only) & 0.16\%    & 1.4\%            & 3.5\%       & 0.07\% \\
+\hline
+\end{tabular}
+
+\caption{{\bf A summary of trimming statistics for semi-streaming
+    error trimming.  Error rates before and after trimming were
+    estimated by mapping. ``High coverage'' numbers refer to the
+    subset of reads with $C \geq 20$ that were subject to analysis.}}
+\label{tab:trimming}
+\end{table}
+
+
+
 % cmouse-compare5-post.txt  cpodar-compare5-post.txt
 % cmouse-compare5-pre.txt   cpodar-compare5-pre.txt
 
 \begin{table}
 \centering
-\begin{tabular}{|l|c|c|c|c|}
+\begin{tabular}{|l|c||c|}
 \hline
 
 Data set             & mouse mRNAseq      & mock metagenome \\
@@ -1153,7 +1160,7 @@ streaming model, which allows us to make use of the {\em
 al. \cite{Feigenbaum2005}.
 
 We address this problem by making use of k-mer spectra, a common
-approach in which reads are treated as subpaths paths through a De
+approach in which reads are treated as subpaths through a De
 Bruijn graph, and errors in the reads are identified by finding
 low-frequency subpaths \cite{Pevzner2001}.  We generalize this approach by
 building the graph with an online algorithm and detecting regions of
@@ -1236,12 +1243,12 @@ Table~\ref{tab:spectra_streaming_real}).
 
 \paragraph{Summary:} A summary of the three approaches developed above
 is presented in Figure~\ref{fig:summary}.  The two-pass approach in
-Figure~\ref{fig:summary}~a yields more efficient memory use, but with
+Figure~\ref{fig:summary}(a) yields more efficient memory use, but with
 no advantage in execution time.  The few-pass approach
-(Figure~\ref{fig:summary}~b combines the lower memory use with fewer
+(Figure~\ref{fig:summary}(b) combines the lower memory use with fewer
 passes across the data, and becomes more efficient as the coverage of
 the data set grows.  Finally, the fully streaming approach in
-Figure~\ref{fig:summary}~c enables one-pass (or less) approaches for
+Figure~\ref{fig:summary}(c) enables one-pass (or less) approaches for
 certain problems.
 
 \section{Discussion}
@@ -1286,7 +1293,7 @@ may have led to poor results (Figure~\ref{fig:rseq_err}).
 This again demonstrates that digitally normalized data retains the
 information necessary to error correct high coverage reads, despite
 having many fewer k-mers and total reads (Table~\ref{tab:kmer_counts}
-and Table~\ref{tab:read_counts}).  Not that we used the Quake software
+and Table~\ref{tab:read_counts}).  Note that we used the Quake software
 because it provided the option of using k-mer counts separate from the
 reads under analysis.  While improved error correction algorithms
 exist and could be evaluated with some modification, we believe the
@@ -1299,7 +1306,7 @@ K-mer spectral error detection, trimming, and correction approaches
 are typically implemented as a two-pass offline algorithm, in which
 k-mer counts are collected in a first pass and then reads are
 corrected in a second pass.  While several algorithms that run in
-sublinear memory do exist (see e.g. Lighter \cite{lighter}, these are
+sublinear memory do exist (e.g., Lighter \cite{lighter}), these are
 still offline algorithms that require two or more passes across
 the data.
 
