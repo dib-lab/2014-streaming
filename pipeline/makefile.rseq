@@ -10,18 +10,18 @@ rseq: rseq_compare2 rseq_compare4 rseq_compare5 \
 	rseq-mapped.fq.gz.subset.3.errhist \
 	rseq-mapped.fq.gz.subset.4.errhist
 
-rseq-reads.fq.gz: mouse-rnaseq.fq.gz
-	./trim-at-N.py mouse-rnaseq.fq.gz | head -40000000 | gzip -9c > rseq-reads.fq.gz
+rseq-reads.fq.gz: mouse-l.fastq.gz
+	./trim-at-N.py mouse-l.fastq.gz | head -40000000 | gzip -9c > rseq-reads.fq.gz
 
-rseq.1.bt2: rna.fa
-	bowtie2-build rna.fa rseq > /dev/null
-	samtools faidx rna.fa
+rseq.1.bt2: mouse-ref.fa
+	bowtie2-build mouse-ref.fa rseq > /dev/null
+	samtools faidx mouse-ref.fa
 
 rseq-reads.sam: rseq-reads.fq.gz rseq.1.bt2
 	gunzip -c rseq-reads.fq.gz | bowtie2 -p 4 -x rseq -U - -S rseq-reads.sam
 
 rseq-sam-mismatches.pos: rseq-reads.sam
-	./sam-scan.py rna.fa rseq-reads.sam -o rseq-sam-mismatches.pos
+	./sam-scan.py mouse-ref.fa rseq-reads.sam -o rseq-sam-mismatches.pos
 
 rseq-mapped.fq.gz: rseq-reads.sam
 	./extract-sam-seqs-to-fq.py rseq-reads.sam rseq-reads.fq.gz | gzip > rseq-mapped.fq.gz
@@ -51,13 +51,13 @@ rseq-reads.hicov.fq.sam: rseq-reads.hicov.fq rseq.1.bt2
 	bowtie2 -p 4 -x rseq -U rseq-reads.hicov.fq -S rseq-reads.hicov.fq.sam
 
 rseq-reads-hicov-sam-mismatches.pos: rseq-reads.hicov.fq.sam
-	./sam-scan.py rna.fa rseq-reads.hicov.fq.sam -o rseq-reads-hicov-sam-mismatches.pos
+	./sam-scan.py mouse-ref.fa rseq-reads.hicov.fq.sam -o rseq-reads-hicov-sam-mismatches.pos
 
 rseq-reads-hicov-sam-mismatches-report.txt: rseq-reads-hicov-sam-mismatches.pos
 	./summarize-pos-file.py rseq-reads-hicov-sam-mismatches.pos rseq-reads.hicov.fq > rseq-reads-hicov-sam-mismatches-report.txt
 
 rseq-reads.hicov.fq.sam.covdict: rseq-reads.hicov.fq.sam
-	./sam-scan-to-coverage-dict.py rna.fa rseq-reads.hicov.fq.sam rseq-reads.hicov.fq.sam.covdict rseq-reads.hicov.fq.sam.covhist
+	./sam-scan-to-coverage-dict.py mouse-ref.fa rseq-reads.hicov.fq.sam rseq-reads.hicov.fq.sam.covdict rseq-reads.hicov.fq.sam.covhist
 
 rseq-reads.lowcov.fq: rseq-mapped.fq.gz rseq-reads.dn.kh
 	$(KHMER)/sandbox/slice-reads-by-coverage.py -M 19 rseq-reads.dn.kh rseq-mapped.fq.gz rseq-reads.lowcov.fq
@@ -66,7 +66,7 @@ rseq-reads.lowcov.fq.sam: rseq-reads.lowcov.fq rseq.1.bt2
 	bowtie2 -x rseq -U rseq-reads.lowcov.fq -S rseq-reads.lowcov.fq.sam
 
 rseq-reads.lowcov.fq.sam.covdict: rseq-reads.lowcov.fq.sam
-	./sam-scan-to-coverage-dict.py rna.fa rseq-reads.lowcov.fq.sam rseq-reads.lowcov.fq.sam.covdict rseq-reads.lowcov.fq.sam.covhist
+	./sam-scan-to-coverage-dict.py mouse-ref.fa rseq-reads.lowcov.fq.sam rseq-reads.lowcov.fq.sam.covdict rseq-reads.lowcov.fq.sam.covhist
 
 rseq-stream-mismatches.pos: rseq-mapped.fq.gz
 	./calc-errors-few-pass.py -V rseq-mapped.fq.gz -x 1e8 -N 4 > rseq-stream-mismatches.pos
@@ -91,7 +91,7 @@ rseq-hicov-abundtrim.sam: rseq-reads.hicov.fq.abundtrim
 	bowtie2 -p 4 -x rseq -U rseq-reads.hicov.fq.abundtrim -S rseq-hicov-abundtrim.sam
 
 rseq-hicov-abundtrim.sam.pos: rseq-hicov-abundtrim.sam
-	./sam-scan.py rna.fa rseq-hicov-abundtrim.sam -o rseq-hicov-abundtrim.sam.pos
+	./sam-scan.py mouse-ref.fa rseq-hicov-abundtrim.sam -o rseq-hicov-abundtrim.sam.pos
 
 rseq_compare5b.txt: rseq-reads-hicov-sam-mismatches-report.txt rseq-hicov-abundtrim.sam.pos
 	cat rseq-reads-hicov-sam-mismatches-report.txt > rseq_compare5b.txt
@@ -108,7 +108,7 @@ rseq-abundtrim.sam: rseq-mapped.fq.gz.abundtrim \
 	bowtie2 -p 4 -x rseq -U rseq-mapped.fq.gz.abundtrim -S rseq-abundtrim.sam
 
 rseq-abundtrim-sam-mismatches.pos: rseq-abundtrim.sam
-	./sam-scan.py rna.fa rseq-abundtrim.sam -o rseq-abundtrim-sam-mismatches.pos
+	./sam-scan.py mouse-ref.fa rseq-abundtrim.sam -o rseq-abundtrim-sam-mismatches.pos
 
 rseq-reads.hicov.cor.fq.gz: rseq-reads.hicov.fq rseq-reads.hicov.fq.keep
 	echo rseq-reads.hicov.fq > rseq_quake_list.txt
@@ -121,13 +121,13 @@ rseq-reads.hicov.cor.sam: rseq-reads.hicov.cor.fq.gz
 	gunzip -c rseq-reads.hicov.cor.fq.gz | bowtie2 -p 4 -x rseq -U - -S rseq-reads.hicov.cor.sam
 
 rseq-reads.hicov.cor.sam.pos: rseq-reads.hicov.cor.sam
-	./sam-scan.py rna.fa rseq-reads.hicov.cor.sam -o rseq-reads.hicov.cor.sam.pos
+	./sam-scan.py mouse-ref.fa rseq-reads.hicov.cor.sam -o rseq-reads.hicov.cor.sam.pos
 
 rseq-reads.hicov.fq.sam.pos: rseq-reads.hicov.fq.sam
-	./sam-scan.py rna.fa rseq-reads.hicov.fq.sam -o rseq-reads.hicov.fq.sam.pos
+	./sam-scan.py mouse-ref.fa rseq-reads.hicov.fq.sam -o rseq-reads.hicov.fq.sam.pos
 
 rseq-reads.hicov.cor.sorted.bam: rseq-reads.hicov.cor.sam
-	samtools import rna.fa.fai rseq-reads.hicov.cor.sam rseq-reads.hicov.cor.bam
+	samtools import mouse-ref.fa.fai rseq-reads.hicov.cor.sam rseq-reads.hicov.cor.bam
 	samtools sort rseq-reads.hicov.cor.bam rseq-reads.hicov.cor.sorted
 	samtools index rseq-reads.hicov.cor.sorted.bam
 
@@ -145,7 +145,7 @@ rseq-mapped.fq.gz.errhist2: rseq-mapped.fq.gz rseq-reads.dn.kh
 	./report-errhist-2pass.py -V rseq-reads.dn.kh rseq-mapped.fq.gz  -o rseq-mapped.fq.gz.errhist2
 
 rseq-reads.sam.errhist: rseq-reads.sam
-	./sam-scan-errhist.py rna.fa rseq-reads.sam -o rseq-reads.sam.errhist
+	./sam-scan-errhist.py mouse-ref.fa rseq-reads.sam -o rseq-reads.sam.errhist
 
 rseq-mapped.fq.gz.subset.0: rseq-mapped.fq.gz
 	sample-reads-randomly.py -R 1 -S 5 -N 500000 rseq-mapped.fq.gz
