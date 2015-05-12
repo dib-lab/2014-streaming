@@ -15,12 +15,12 @@ def output_single(read):
     name = read.name
     sequence = read.sequence
 
-    accuracy = None
-    if hasattr(read, 'accuracy'):
-        accuracy = read.accuracy
+    quality = None
+    if hasattr(read, 'quality'):
+        quality = read.quality
 
-    if accuracy:
-        return "@%s\n%s\n+\n%s\n" % (name, sequence, accuracy)
+    if quality:
+        return "@%s\n%s\n+\n%s\n" % (name, sequence, quality)
     else:
         return ">%s\n%s\n" % (name, sequence)
 
