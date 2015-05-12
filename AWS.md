@@ -11,7 +11,8 @@ python -m virtualenv work
 
 pip install -U setuptools
 git clone https://github.com/ged-lab/nullgraph.git
-git clone https://github.com/ged-lab/khmer.git -b v1.3
+git clone https://github.com/ged-lab/khmer.git
+# use master for now, not -b v1.3
 
 cd khmer
 make install
