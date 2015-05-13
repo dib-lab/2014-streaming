@@ -18,6 +18,9 @@ Set up your working directory::
 
    ln /mnt/data/* .
 
-Run the software::
+Note, this assumes that your data is in /mnt/data; you can either 'ln'
+or 'cp' it into the pipeline directory as you wish.
+
+Now, run the software pipeline::
 
    docker run -v /mnt/paper:/paper -it titus/test /paper/pipeline/run-in-docker.sh
