@@ -1,10 +1,19 @@
 Make sure you have Docker installed.  When running Ubuntu 14.04, the
-following should suffice on a blank system::
+following should suffice on a blank system.
+
+First, update your Debian packages -- ::
 
     sudo apt-get update
+
+Then, install docker::
+
     wget -qO- https://get.docker.com/ | sudo sh
 
-    sudo usermod -aG docker
+And, finally, update the default user 'ubuntu' to be able to run docker::
+
+    sudo usermod -aG docker ubuntu
+
+----
 
 Now, build a local image from a Dockerfile::
 
