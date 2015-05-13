@@ -13,6 +13,11 @@ And, finally, update the default user 'ubuntu' to be able to run docker::
 
     sudo usermod -aG docker ubuntu
 
+If '/mnt' is your working directory, as assumed below, you should also make
+it world-writeable::
+
+    sudo chmod a+rwxt /mnt
+
 ----
 
 Now, build a local image from a Dockerfile::
@@ -32,4 +37,4 @@ or 'cp' it into the pipeline directory as you wish.
 
 Now, run the software pipeline::
 
-   docker run -v /mnt/paper:/paper -it titus/test /paper/pipeline/run-in-docker.sh
+   docker run -v /mnt/paper:/paper -it titus/test

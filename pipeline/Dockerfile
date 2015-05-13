@@ -7,4 +7,3 @@ RUN git clone https://github.com/ged-lab/nullgraph.git /home/nullgraph
 RUN git clone https://github.com/ged-lab/khmer.git /home/khmer
 RUN cd /home/khmer && make install
 CMD /paper/pipeline/run-in-docker.sh
-EOF
