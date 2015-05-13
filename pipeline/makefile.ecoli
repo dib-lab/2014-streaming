@@ -127,7 +127,7 @@ ecoli_corr: ecoli-mapped.raw.cor.fq.gz ecoli-mapped.dn.cor.fq.gz \
 
 ecoli-mapped.dn.cor.fq.gz: ecoli-mapped.fq.gz ecoli-mapped.fq.gz.keep
 	echo ecoli-mapped.fq.gz > ecoli_quake_list.txt
-	ln -fs /usr/local/bin/jellyfish .
+	ln -fs $(JELLYFISH) .
 	cat ecoli-mapped.fq.gz.keep | $(QUAKE)/bin/count-qmers -q 33 -k 14 > ecoli_dn_counts.out
 	-$(QUAKE)/bin/cov_model.py ecoli_dn_counts.out > ecoli_dn_counts.cov
 	$(QUAKE)/bin/correct -f ecoli_quake_list.txt -p 4 -k 14 -q 33 -c 7.94 -z -m ecoli_dn_counts.out
@@ -135,7 +135,7 @@ ecoli-mapped.dn.cor.fq.gz: ecoli-mapped.fq.gz ecoli-mapped.fq.gz.keep
 
 ecoli-mapped.raw.cor.fq.gz: ecoli-mapped.fq.gz
 	echo ecoli-mapped.fq.gz > ecoli_quake_list.txt
-	ln -fs /usr/local/bin/jellyfish .
+	ln -fs $(JELLYFISH) .
 	gunzip -c ecoli-mapped.fq.gz | $(QUAKE)/bin/count-qmers -q 33 -k 14 > ecoli_raw_counts.out
 	-$(QUAKE)/bin/cov_model.py ecoli_raw_counts.out
 	$(QUAKE)/bin/correct -f ecoli_quake_list.txt -p 4 -k 14 -q 33 -c 7.2 -z -m ecoli_raw_counts.out

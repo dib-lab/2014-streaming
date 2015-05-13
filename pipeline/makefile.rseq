@@ -112,7 +112,7 @@ rseq-abundtrim-sam-mismatches.pos: rseq-abundtrim.sam
 
 rseq-reads.hicov.cor.fq.gz: rseq-reads.hicov.fq rseq-reads.hicov.fq.keep
 	echo rseq-reads.hicov.fq > rseq_quake_list.txt
-	ln -fs /usr/local/bin/jellyfish .
+	ln -fs $(JELLYFISH) .
 	cat rseq-reads.hicov.fq.keep | $(QUAKE)/bin/count-qmers -q 33 -k 14 > rseq_dn_counts.out
 	-$(QUAKE)/bin/cov_model.py rseq_dn_counts.out > rseq_dn_counts.cov
 	$(QUAKE)/bin/correct -f rseq_quake_list.txt -p 4 -k 14 -q 33 -c 6.26 -z -m rseq_dn_counts.out
