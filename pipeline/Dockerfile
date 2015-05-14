@@ -11,16 +11,14 @@ RUN pip install -U setuptools
 
 # install Jellyfish
 RUN apt-get -y install curl
-RUN curl http://www.cbcb.umd.edu/software/jellyfish/jellyfish-1.1.11.tar.gz > je
-llyfish.tar.gz && \
+RUN curl http://www.cbcb.umd.edu/software/jellyfish/jellyfish-1.1.11.tar.gz > jellyfish.tar.gz && \
         tar xzf jellyfish.tar.gz && \
         cd jellyfish-1.1.11 && \
         ./configure && \
         make
 
 # install Quake
-RUN curl http://www.cbcb.umd.edu/software/quake/downloads/quake-0.3.5.tar.gz > q
-uake.tar.gz && \
+RUN curl http://www.cbcb.umd.edu/software/quake/downloads/quake-0.3.5.tar.gz > quake.tar.gz && \
         tar xzf quake.tar.gz && \
         cd Quake/src && \
         make
