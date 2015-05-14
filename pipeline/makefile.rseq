@@ -8,7 +8,8 @@ rseq: rseq_compare2 rseq_compare4 rseq_compare5 \
 	rseq-mapped.fq.gz.subset.1.errhist \
 	rseq-mapped.fq.gz.subset.2.errhist \
 	rseq-mapped.fq.gz.subset.3.errhist \
-	rseq-mapped.fq.gz.subset.4.errhist
+	rseq-mapped.fq.gz.subset.4.errhist \
+	rseq-compare8.txt
 
 rseq-reads.fq.gz: mouse-l.fastq.gz
 	./trim-at-N.py mouse-l.fastq.gz | head -40000000 | gzip -9c > rseq-reads.fq.gz
@@ -26,6 +27,12 @@ rseq-sam-mismatches.pos: rseq-reads.sam
 rseq-mapped.fq.gz: rseq-reads.sam
 	./extract-sam-seqs-to-fq.py rseq-reads.sam rseq-reads.fq.gz | gzip > rseq-mapped.fq.gz
 
+rseq-reads.kh: rseq-mapped.fq.gz
+	load-into-counting.py -x 4e8 -N 4 -k 20 rseq-reads.kh rseq-mapped.fq.gz
+
+rseq-reads-nodn-noV.errors.pos: rseq-mapped.fq.gz rseq-reads.kh
+	 ./report-errors-by-read.py rseq-reads.kh rseq-mapped.fq.gz > rseq-reads-nodn-noV.errors.pos
+
 rseq-reads.dn.kh: rseq-mapped.fq.gz
 	normalize-by-median.py -k 20 -C 20 rseq-mapped.fq.gz -s rseq-reads.dn.kh -x 1e8 -N 4
 
@@ -37,6 +44,12 @@ rseq_compare2: rseq_compare2.txt
 
 rseq_compare2.txt: rseq-errors.pos rseq-sam-mismatches.pos
 	./compare-pos.py -V rseq-errors.pos rseq-sam-mismatches.pos rseq-mapped.fq.gz > rseq_compare2.txt
+
+rseq_compare2b.txt: rseq-reads-nodn-noV.errors.pos rseq-sam-mismatches.pos
+	./compare-pos.py -V rseq-reads-nodn-noV.errors.pos rseq-sam-mismatches.pos rseq-mapped.fq.gz > rseq_compare2b.txt
+
+rseq_compare7.txt: rseq-reads.sam rseq-abundtrim.sam
+	./sam-calc-refcov-cmp.py mouse-ref.fa rseq-reads.sam rseq-abundtrim.sam
 
 rseq-reads.hicov.fq: rseq-mapped.fq.gz rseq-reads.dn.kh
 	$(KHMER)/sandbox/slice-reads-by-coverage.py -m 20 rseq-reads.dn.kh rseq-mapped.fq.gz rseq-reads.hicov.fq
@@ -164,3 +177,6 @@ rseq-mapped.fq.gz.subset.3.errhist: rseq-mapped.fq.gz.subset.3
 
 rseq-mapped.fq.gz.subset.4.errhist: rseq-mapped.fq.gz.subset.4
 	-$(KHMER)/sandbox/calc-error-profile.py rseq-mapped.fq.gz.subset.4
+
+rseq-compare8.txt: rseq-reads.sam rseq-abundtrim.sam
+	./sam-calc-refcov-cmp.py mouse-ref.fa rseq-reads.sam rseq-abundtrim.sam > rseq-compare8.txt
