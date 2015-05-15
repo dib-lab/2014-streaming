@@ -87,3 +87,4 @@ rseq-reads.hicov.cor.fq.gz
 podar-reads.hicov.fq
 *.subset.?
 *.gz
+*.kh.info
