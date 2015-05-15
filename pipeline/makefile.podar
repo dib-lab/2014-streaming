@@ -1,7 +1,7 @@
 PODAR_COV=20
 
 podar:  podar.1.bt2 \
-	podar_compare2.txt podar_compare4.txt podar_compare5 podar_compare5b
+	podar_compare2.txt podar_compare4.txt podar_compare5 podar_compare5b \
 	podar-compare8.txt
 
 podar.1.bt2: podar-ref.fa
