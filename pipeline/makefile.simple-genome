@@ -87,7 +87,7 @@ compare5: simple-genome-sam-mismatches.pos simple-genome-abundtrim-sam-mismatche
 	./summarize-pos-file.py simple-genome-abundtrim-sam-mismatches.pos simple-genome-reads.fa.abundtrim
 
 simple-genome-reads-even.fa.errhist: simple-genome-reads-even.fa
-	-$(KHMER)/sandbox/calc-error-profile.py simple-genome-reads-even.fa
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 simple-genome-reads-even.fa
 
 compare6: simple-genome-reads.mut.pos simple-genome-errors-nodn.pos
 	./compare-pos.py simple-genome-errors-nodn.pos simple-genome-reads.mut.pos simple-genome-reads.fa

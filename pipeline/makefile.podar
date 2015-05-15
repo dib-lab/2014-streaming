@@ -2,7 +2,7 @@ PODAR_COV=20
 
 podar:  podar.1.bt2 \
 	podar_compare2.txt podar_compare4.txt podar_compare5 podar_compare5b \
-	podar-compare8.txt
+	podar-compare8.txt podar-compare8b.txt
 
 podar.1.bt2: podar-ref.fa
 	bowtie2-build podar-ref.fa podar
@@ -22,6 +22,12 @@ podar.kh: podar-mapped.fq.gz
 
 podar-reads-nodn-noV.errors.pos: podar-mapped.fq.gz podar.kh
 	 ./report-errors-by-read.py podar.kh podar-mapped.fq.gz > podar-reads-nodn-noV.errors.pos
+
+podar-mapped.fq.gz.abundfilt: podar-mapped.fq.gz podar.kh
+	filter-abund.py -C 3 podar.kh podar-mapped.fq.gz
+
+podar-abundfilt.sam: podar-mapped.fq.gz.abundfilt
+	bowtie2 -p 4 -x podar -U podar-mapped.fq.gz.abundfilt -S podar-abundfilt.sam
 
 podar.dn.kh: podar-mapped.fq.gz
 	 normalize-by-median.py -x 4e8 -N 4 -k 20 -C $(PODAR_COV) -s podar.dn.kh podar-mapped.fq.gz -R podar-dn-report.txt
@@ -100,3 +106,6 @@ podar_compare5b: podar_compare5b_pre.txt podar_compare5b_post.txt
 
 podar-compare8.txt: podar-reads.sam podar-abundtrim.sam
 	./sam-calc-refcov-cmp.py podar-ref.fa podar-reads.sam podar-abundtrim.sam > podar-compare8.txt
+
+podar-compare8b.txt: podar-reads.sam podar-abundfilt.sam
+	./sam-calc-refcov-cmp.py podar-ref.fa podar-reads.sam podar-abundfilt.sam > podar-compare8b.txt

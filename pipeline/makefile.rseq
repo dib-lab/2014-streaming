@@ -9,7 +9,7 @@ rseq: rseq_compare2 rseq_compare4 rseq_compare5 \
 	rseq-mapped.fq.gz.subset.2.errhist \
 	rseq-mapped.fq.gz.subset.3.errhist \
 	rseq-mapped.fq.gz.subset.4.errhist \
-	rseq-compare8.txt
+	rseq-compare8.txt rseq-compare8b.txt
 
 rseq-reads.fq.gz: mouse-l.fastq.gz
 	./trim-at-N.py mouse-l.fastq.gz | head -40000000 | gzip -9c > rseq-reads.fq.gz
@@ -32,6 +32,15 @@ rseq-reads.kh: rseq-mapped.fq.gz
 
 rseq-reads-nodn-noV.errors.pos: rseq-mapped.fq.gz rseq-reads.kh
 	 ./report-errors-by-read.py rseq-reads.kh rseq-mapped.fq.gz > rseq-reads-nodn-noV.errors.pos
+
+rseq-mapped.fq.gz.abundfilt: rseq-mapped.fq.gz rseq-reads.kh
+	filter-abund.py -C 3 rseq-reads.kh rseq-mapped.fq.gz
+
+rseq-abundfilt.sam: rseq-mapped.fq.gz.abundfilt
+	bowtie2 -p 4 -x rseq -U rseq-mapped.fq.gz.abundfilt -S rseq-abundfilt.sam
+
+rseq-abundfilt.sam.pos: rseq-abundfilt.sam
+	./sam-scan.py mouse-ref.fa rseq-abundfilt.sam -o rseq-abundfilt.sam.pos
 
 rseq-reads.dn.kh: rseq-mapped.fq.gz
 	normalize-by-median.py -k 20 -C 20 rseq-mapped.fq.gz -s rseq-reads.dn.kh -x 1e8 -N 4
@@ -116,8 +125,7 @@ rseq_compare5b: rseq_compare5b.txt
 rseq-mapped.fq.gz.abundtrim: rseq-mapped.fq.gz
 	trim-low-abund.py -V -k 20 -Z 20 -C 3 -x 1e8 -N 4 rseq-mapped.fq.gz --ignore-pairs
 
-rseq-abundtrim.sam: rseq-mapped.fq.gz.abundtrim \
-	rseq-reads.sam
+rseq-abundtrim.sam: rseq-mapped.fq.gz.abundtrim rseq-reads.sam
 	bowtie2 -p 4 -x rseq -U rseq-mapped.fq.gz.abundtrim -S rseq-abundtrim.sam
 
 rseq-abundtrim-sam-mismatches.pos: rseq-abundtrim.sam
@@ -164,19 +172,22 @@ rseq-mapped.fq.gz.subset.0: rseq-mapped.fq.gz
 	sample-reads-randomly.py -R 1 -S 5 -N 500000 rseq-mapped.fq.gz
 
 rseq-mapped.fq.gz.subset.0.errhist: rseq-mapped.fq.gz.subset.0
-	-$(KHMER)/sandbox/calc-error-profile.py rseq-mapped.fq.gz.subset.0
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 rseq-mapped.fq.gz.subset.0
 
 rseq-mapped.fq.gz.subset.1.errhist: rseq-mapped.fq.gz.subset.1
-	-$(KHMER)/sandbox/calc-error-profile.py rseq-mapped.fq.gz.subset.1
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 rseq-mapped.fq.gz.subset.1
 
 rseq-mapped.fq.gz.subset.2.errhist: rseq-mapped.fq.gz.subset.2
-	-$(KHMER)/sandbox/calc-error-profile.py rseq-mapped.fq.gz.subset.2
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 rseq-mapped.fq.gz.subset.2
 
 rseq-mapped.fq.gz.subset.3.errhist: rseq-mapped.fq.gz.subset.3
-	-$(KHMER)/sandbox/calc-error-profile.py rseq-mapped.fq.gz.subset.3
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 rseq-mapped.fq.gz.subset.3
 
 rseq-mapped.fq.gz.subset.4.errhist: rseq-mapped.fq.gz.subset.4
-	-$(KHMER)/sandbox/calc-error-profile.py rseq-mapped.fq.gz.subset.4
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 rseq-mapped.fq.gz.subset.4
 
 rseq-compare8.txt: rseq-reads.sam rseq-abundtrim.sam
 	./sam-calc-refcov-cmp.py mouse-ref.fa rseq-reads.sam rseq-abundtrim.sam > rseq-compare8.txt
+
+rseq-compare8b.txt: rseq-reads.sam rseq-abundfilt.sam
+	./sam-calc-refcov-cmp.py mouse-ref.fa rseq-reads.sam rseq-abundfilt.sam > rseq-compare8b.txt

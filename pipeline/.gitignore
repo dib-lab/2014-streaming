@@ -88,3 +88,4 @@ podar-reads.hicov.fq
 *.subset.?
 *.gz
 *.kh.info
+*.abundfilt

@@ -97,19 +97,19 @@ ecoli-mapped.fq.gz.subset.0: ecoli-mapped.fq.gz
 	sample-reads-randomly.py -R 1 -S 5 -N 2000000 ecoli-mapped.fq.gz
 
 ecoli-mapped.fq.gz.subset.0.errhist: ecoli-mapped.fq.gz.subset.0
-	-$(KHMER)/sandbox/calc-error-profile.py ecoli-mapped.fq.gz.subset.0
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 ecoli-mapped.fq.gz.subset.0
 
 ecoli-mapped.fq.gz.subset.1.errhist: ecoli-mapped.fq.gz.subset.1
-	-$(KHMER)/sandbox/calc-error-profile.py ecoli-mapped.fq.gz.subset.1
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 ecoli-mapped.fq.gz.subset.1
 
 ecoli-mapped.fq.gz.subset.2.errhist: ecoli-mapped.fq.gz.subset.2
-	-$(KHMER)/sandbox/calc-error-profile.py ecoli-mapped.fq.gz.subset.2
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 ecoli-mapped.fq.gz.subset.2
 
 ecoli-mapped.fq.gz.subset.3.errhist: ecoli-mapped.fq.gz.subset.3
-	-$(KHMER)/sandbox/calc-error-profile.py ecoli-mapped.fq.gz.subset.3
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 ecoli-mapped.fq.gz.subset.3
 
 ecoli-mapped.fq.gz.subset.4.errhist: ecoli-mapped.fq.gz.subset.4
-	-$(KHMER)/sandbox/calc-error-profile.py ecoli-mapped.fq.gz.subset.4
+	-$(KHMER)/sandbox/calc-error-profile.py --skip-reads=0 ecoli-mapped.fq.gz.subset.4
 
 ecoli-mapped.fq.gz.errhist2: ecoli-mapped.fq.gz ecoli_ref.dn.kh
 	./report-errhist-2pass.py ecoli_ref.dn.kh ecoli-mapped.fq.gz  -o ecoli-mapped.fq.gz.errhist2
