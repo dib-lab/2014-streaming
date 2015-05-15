@@ -1,8 +1,10 @@
-# ~400 GB disk space, 15 GB RAM
+# ~250 GB disk space, 15 GB RAM (240 GB required, total)
 
 sudo apt-get update && sudo shutdown -r now
 
 sudo apt-get -y install python-virtualenv python-dev git bowtie2 samtools libboost-dev zlib1g-dev
+
+## put a 400 GB disk on /mnt
 
 sudo chmod a+rwxt /mnt
 
