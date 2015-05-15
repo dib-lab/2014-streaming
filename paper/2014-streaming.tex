@@ -10,7 +10,7 @@
 
 \begin{document}
 
-\title{Crossing the streams: a framework for streaming analysis of
+\title{Crossing the streams: a framework for semi-streaming analysis of
 short DNA sequencing reads}
 
 \author{Qingpeng Zhang$^{1}$, Sherine Awad$^{2,3}$, C. Titus Brown$^{2,1,3,\ast}$\\
@@ -87,17 +87,183 @@ the data once, and counts only the k-mers in retained reads, leading
 to sublinear memory usage for high-coverage data sets
 \cite{Brown2012}.
 
-Here we develop a semi-streaming algorithm for k-mer spectral
-analysis, based on digital normalization, that can detect and remove
-errors in sequencing reads.  This algorithm operates in sublinear
-memory with respect to the input data, and examines the data at most
-twice.  The approach offers a general framework for streaming sequence
-analysis and could be used for error correction and variant calling.
-Moreover, the approach can be applied generically to data sets with
-variable sequencing coverage such as transcriptomes, metagenomes, and
-amplified genomic DNA.  We also provide a fully streaming approach for
-estimating per-position sequencing error rates in reads that operates
-in fixed memory and only examines part of the input data.
+While the abundance normalization process developed in digital
+normalization has been used widely (\cite{xxx}) and is now implemented
+in several different software packages \cite{yyy}, the streaming
+approach itself has not been developed further.  Here we develop a
+semi-streaming algorithm for k-mer spectral analysis, based on digital
+normalization, that can detect and remove errors in sequencing reads.
+This algorithm operates in sublinear memory with respect to the input
+data, and examines the data at most twice.  The approach offers a
+general framework for streaming sequence analysis and could be used
+for error correction and variant calling.  Moreover, the approach can
+be applied generically to data sets with variable sequencing coverage
+such as transcriptomes, metagenomes, and amplified genomic DNA.  We
+also provide a fully streaming approach for estimating per-position
+sequencing error rates in reads that operates in fixed memory and only
+examines part of the input data.
+
+\subsection{Algorithmic considerations}
+
+\label{sec:alg}
+
+Shotgun DNA sequencing gives us a stream
+of items representing sentences (``reads'') randomly sampled from a
+larger text, with replacement.  In this paper, our primary goal is to
+efficiently identify the locations of errors in these reads by
+finding differences with respect to the (unknown) source text; however, this
+problem is a gateway to a larger set of interesting domain problems,
+which includes estimating the true abundance of the sentences in the
+larger text and determining the complete composition of the source text.
+
+There are several distinct features of this problem that bear
+mentioning.  The first is that important details of the source text,
+such as its size and statistical composition, may be completely
+unknown; that is, often the reads themselves are the most specific
+information we have about the source text.  Second, the source text
+may be incompletely sampled by the reads, and whether or not it is
+completely sampled may not be known in advance.  And third, read
+data sets are typically stored on disk, at least in current
+implementations; our goal is to identify more efficient approaches to
+examining these data sets without necessarily moving to a pure
+streaming model, which allows us to make use of the {\em
+  semi-streaming} paradigm introduced by Feigenbaum et
+al. \cite{Feigenbaum2005}.
+
+We address this problem by making use of k-mer spectra, a common
+approach in which reads are treated as subpaths through a De Bruijn
+graph, and errors in the reads are identified by finding low-frequency
+subpaths \cite{Pevzner2001}.  Below, we generalize this approach by
+building the graph with an online algorithm and detecting regions of
+the graph saturated by observations.  These regions can then be used
+for per-read analysis without necessarily examining the entire data
+set.
+
+\paragraph{Detecting graph saturation:}
+We detect graph saturation with digital normalization, presented
+in \cite{Brown2012}. The digital
+normalization algorithm is, in Python pseudocode:
+\begin{verbatim}
+for read in data:
+   if coverage(read, table) < DESIRED:
+      add_read_to_graph(read, graph)
+      analyze(read)
+\end{verbatim}
+This is a single-pass algorithm that can be implemented in fixed space
+using a Count-Min Sketch to store the De Bruijn graph necessary for
+coverage estimation \cite{Pell2012, Zhang2014}.  For any
+error-containing data set with coverage greater than {\tt DESIRED},
+the graph requires space less than the size of the input - typically
+space sublinear in the data size, for any fixed-size source text (see
+Figure~\ref{fig:saturation} and \cite{Zhang2014}).
+
+\begin{figure}[!ht]
+ \centerline{\includegraphics[width=4in]{./figures/saturation}}
+\caption{\bf Saturation curve of a real and a simulated {\em E. coli}
+  read data set.  Reads are collected when they have an estimated
+  coverage of less than 20; in the early phase ($<$ 1m reads), almost
+  all reads are collected, but by 2m reads into the data set, the
+  majority of reads come from loci with an estimated sequencing depth
+  of $>$ 20 and are rejected.}
+\label{fig:saturation}
+\end{figure}
+
+The digital normalization algorithm was developed as a {\em filter},
+in which retained reads are passed on to another program (such as a {\em
+  de novo} assembler) for further analysis -- these later analyses are
+typically based on multi-pass, heavyweight algorithms.  Here, digital
+normalization is performing lossy compression, reducing the number of
+error-containing sentences while attempting to retain the structure of
+the De Bruijn graph \cite{Brown2012, Zhang2014, Lowe2015}.  This reliance
+on a post-normalization heavyweight analysis step presents challenges in the
+analysis of large data sets, which motivates this work.
+
+\paragraph{Semi-streaming analysis:} The algorithm for {\em semi-streaming} analysis of reads we explore in this work is:
+\begin{verbatim}
+for read in data:  # first pass
+   if coverage(read, graph) < DESIRED:
+      add_read_to_graph(read, graph)
+      save(read)
+   else:
+      analyze(read)
+
+for read in saved_reads:   # second pass
+   if coverage(read, graph) >= DESIRED:
+      analyze(read)
+\end{verbatim}
+Here, the space used for the graph remains identical to the digital
+normalization algorithm and is typically sublinear in space for high
+coverage data sets, but the algorithm is no longer single-pass, and
+requires re-examining some subset of the input data in a second pass.
+In the worst case scenario, with an undersampled source text (or
+randomly generated sentences), this is a fully offline two-pass
+approach that requires re-examining {\em all} of the input data for
+the second pass.  In practice, most real data sets will require fewer
+than two passes: graphically, any deviation from the identity line in
+a saturation analysis as in Figure~\ref{fig:saturation} yields a
+few-pass algorithm.
+
+\paragraph{Reduction to a streaming algorithm:} The semi-streaming
+algorithm can be turned into a purely streaming algorithm in several
+special cases - specifically, whenever reads need not be saved for a
+second pass.  One example is given below, in determining the error
+profile of sequencing reads: here the error profile can be determined
+from only a small portion of the data.
+
+Another example of a purely streaming approach is when some portion of
+correct data can be discarded, e.g. because of oversampling.  (One
+biological application for this occurs when the data set generated is
+large enough to guarantee very high coverage of the entire genome.)
+In this case, rather than saving reads for a second pass, only
+saturated reads are analyzed, while reads that are not from saturated
+regions in the graph are simply discarded.  Applying this approach to
+the {\em E. coli} data set used above for Figure~\ref{fig:saturation},
+approximately 1/3 of the reads would be discarded while the remaining
+2/3 would be analyzed (see ``Number of passes'',
+Table~\ref{tab:spectra_streaming_real}).
+
+\begin{figure}[!ht]
+ \centerline{\includegraphics[width=4in]{./figures/summary-algorithms}}
+\caption{\bf A summary of the three approaches to k-mer spectral analysis
+  presented below.  (a) Digital normalization reduces the set of k-mers
+  to be used for the second pass analysis of the full data set. (b) Combining
+  online saturation analysis with collection of reads yields a few-pass
+  algorithm.  (c) When all of the data does not need to be analyzed, online
+  detection of saturation can be used to drive the analysis of saturated
+  portions of the reads and graph.}
+\label{fig:summary}
+\end{figure}
+
+\paragraph{Summary:} A summary of the three approaches described above
+is presented in Figure~\ref{fig:summary}.  The two-pass approach in
+Figure~\ref{fig:summary}(a) yields more efficient memory use, but with
+no advantage in execution time.  The few-pass approach
+(Figure~\ref{fig:summary}(b)) combines the lower memory use with fewer
+passes across the data, and becomes more efficient as the coverage of
+the data set grows.  Finally, the fully streaming approach in
+Figure~\ref{fig:summary}(c) enables one-pass (or less) approaches for
+certain problems.
+
+\subsection{Implementation considerations}
+
+Real data often differs from simulated data in important ways: in
+particular, shotgun sequencing data may not be in random order and may
+not represent perfectly random sampling.  Shotgun sequencing data may
+also contain systematic biases.  Moreover, implementation details can
+strongly affect the results.
+
+Below, we explore the algorithmic concepts introduced above in the
+context of several simulated and real data sets, using the khmer
+software package \cite{stuff}.  Using khmer, we provide demonstration
+implementations of the spectral analysis approach as well as a
+specific error trimming algorithm; since we know the ground truth for
+all data sets used below, we can evaluate the sensitivity and
+specificity of the algorithms, as well as their storage and time
+requirements.  However, while our implementation is based on a
+memory-efficient software package for k-mer and graph exploration (see
+\cite{Pell2012} and \cite{Zhang2014}), we do not evaluate
+computational performance {\em per se} - our goal is algorithmic
+improvement, not implementation improvement.
 
 \section{Methods}
 
@@ -148,7 +314,8 @@ implementation used is implemented in khmer, script {\tt
 \subsection{K-mer spectral analysis}
 
 All spectral error analysis was done by finding the beginning and end
-point of runs of low-abundance k-mers in each read.  For normalized
+point of runs of low-abundance k-mers in each read (essentially as
+implemented in Quake \cite{quake}).  For normalized
 data, we used a low-abundance cutoff of 3; for non-normalized data, we
 used a low-abundance cutoff of 10.  These cutoffs were chosen by
 examining the k-mer abundance plot (Figure~\ref{fig:spectrum}).
@@ -214,13 +381,13 @@ and correct errors in high-coverage shotgun sequencing data}
 Digital normalization eliminates many erroneous k-mers, while
 retaining the majority of true k-mers \cite{Brown2012}.  Our initial
 question was whether we could apply spectral error analysis to genomic
-short read data using counts from digitally normalized data. This
-would allow us to take advantage of the space savings of digital
-normalization when storing and examining k-mer counts.  We tested this
-on a synthetic data set and an {\em E. coli} data set.  We then
-compared the performance of the Quake genomic error counter on the
-original and digitally normalized counts from the {\em E. coli data}
-\cite{quake}.
+short read data using counts from digitally normalized data (as in
+Figure~\ref{fig:summary}(a)). This would allow us to take advantage of
+the space savings of digital normalization when storing and examining
+k-mer counts.  We tested this on a synthetic data set and an {\em
+  E. coli} data set.  We then compared the performance of the Quake
+genomic error counter on the original and digitally normalized counts
+from the {\em E. coli data} \cite{quake}.
 
 \paragraph{Simulated data:}
 We first applied digital normalization to a simulated data set with
@@ -595,6 +762,7 @@ synthetic genome (100.0\% sensitivity and 71.1\% specificity with the
 same parameters; see Table~\ref{tab:a}).
 
 % make rseq_compare2
+% make 
 
 \begin{table}
 \begin{tabular}{|l|c||c|}
@@ -708,7 +876,7 @@ analyzes the reads for low-abundance k-mers.  Even with digital
 normalization reducing the number of k-mers under consideration, this
 2-pass approach is time consuming on large data sets.  Below, we
 develop an approach that considers many of the
-reads only once.
+reads only once (as in Figure~\ref{fig:summary}(b)).
 
 \paragraph{Semi-streaming analysis of coverage-saturated regions:}
 
@@ -747,7 +915,7 @@ component of the data, the smaller the fraction of the data that is
 examined twice.
 
 \begin{figure}[!ht]
- \centerline{\includegraphics[width=4in]{./figures/graph-saturation}}
+\centerline{\includegraphics[width=4in]{./figures/graph-saturation}}
 \caption{\bf Diagram of semi-streaming error detection. In a first pass
 over the read data, reads are loaded in until the graph locus to which
 they belong is saturated.  From that point on, reads are examined for
@@ -762,17 +930,6 @@ saturation curves for both real and error-free simulated reads from
 majority of reads have an estimated coverage of 20 or higher, and
 hence can be used for error analysis on the remainder of the data
 encountered in the first pass.
-
-\begin{figure}[!ht]
- \centerline{\includegraphics[width=4in]{./figures/saturation}}
-\caption{\bf Saturation curve of a real and a simulated {\em E. coli}
-  read data set.  Reads are collected when they have an estimated
-  coverage of less than 20; in the early phase ($<$ 1m reads), almost
-  all reads are collected, but by 2m reads into the data set, the
-  majority of reads come from loci with an estimated sequencing depth
-  of $>$ 20 and are rejected.}
-\label{fig:saturation}
-\end{figure}
 
 % make compare4
 % make mcompare4
@@ -1119,137 +1276,6 @@ Post-trim error rate & 1.30\%        & 0.15\% \\
 Error rates before and after trimming were estimated by mapping.}}
 \label{tab:full_trimming}
 \end{table}
-
-\subsection{Time and space considerations}
-
-\begin{figure}[!ht]
- \centerline{\includegraphics[width=4in]{./figures/summary-algorithms}}
-\caption{\bf A summary of the three approaches to k-mer spectral analysis
-  presented above.  (a) Digital normalization reduces the set of k-mers
-  to be used for the second pass analysis of the full data set. (b) Combining
-  online saturation analysis with collection of reads yields a few-pass
-  algorithm.  (c) When all of the data does not need to be analyzed, online
-  detection of saturation can be used to drive the analysis of saturated
-  portions of the reads and graph.}
-\label{fig:summary}
-\end{figure}
-
-\label{sec:alg}
-
-Shotgun DNA sequencing gives us a stream
-of items representing sentences (``reads'') randomly sampled from a
-larger text, with replacement.  In this paper, our primary goal is to
-efficiently identify the locations of errors in these reads by
-finding differences with respect to the (unknown) source text; however, this
-problem is a gateway to a larger set of interesting domain problems,
-which includes estimating the true abundance of the sentences in the
-larger text and determining the complete composition of the source text.
-
-There are several distinct features of this problem that bear
-mentioning.  The first is that important details of the source text,
-such as its size and statistical composition, may be completely
-unknown; that is, often the reads themselves are the most specific
-information we have about the source text.  Second, the source text
-may be incompletely sampled by the reads, and whether or not it is
-completely sampled may not be known in advance.  And third, read
-data sets are typically stored on disk, at least in current
-implementations; our goal is to identify more efficient approaches to
-examining these data sets without necessarily moving to a pure
-streaming model, which allows us to make use of the {\em
-  semi-streaming} paradigm introduced by Feigenbaum et
-al. \cite{Feigenbaum2005}.
-
-We address this problem by making use of k-mer spectra, a common
-approach in which reads are treated as subpaths through a De
-Bruijn graph, and errors in the reads are identified by finding
-low-frequency subpaths \cite{Pevzner2001}.  We generalize this approach by
-building the graph with an online algorithm and detecting regions of
-the graph saturated by observations.  These regions can then be used
-for per-read analysis without necessarily examining the entire data
-set.
-
-\paragraph{Detecting graph saturation:}
-We detect graph saturation with digital normalization. The digital
-normalization algorithm is, in Python pseudocode:
-\begin{verbatim}
-for read in data:
-   if coverage(read, table) < DESIRED:
-      add_read_to_graph(read, graph)
-      analyze(read)
-\end{verbatim}
-This is a single-pass algorithm that can be implemented in fixed space
-using a Count-Min Sketch to store the De Bruijn graph necessary for
-coverage estimation \cite{Pell2012, Zhang2014}.  For any
-error-containing data set with coverage greater than {\tt DESIRED},
-the graph requires space less than the size of the input - typically
-space sublinear in the data size, for any fixed-size source text (see
-Figure~\ref{fig:saturation} and \cite{Zhang2014}).
-
-The digital normalization algorithm was developed as a {\em filter},
-in which the reads are passed on to another program (such as a {\em
-  de novo} assembler) for further analysis -- these later analyses are
-typically based on multi-pass, heavyweight algorithms.  Here, digital
-normalization is performing lossy compression, reducing the number of
-error-containing sentences while attempting to retain the structure of
-the De Bruijn graph \cite{Brown2012, Zhang2014, Lowe2015}.  This reliance
-on a post-normalization heavyweight analysis step limits the
-applicability of digital normalization and presents challenges in the
-analysis of extremely large data sets, which motivated this work.
-
-\paragraph{Semi-streaming analysis:} The algorithm for {\em semi-streaming} analysis of reads is as
-follows:
-\begin{verbatim}
-for read in data:  # first pass
-   if coverage(read, graph) < DESIRED:
-      add_read_to_graph(read, graph)
-      save(read)
-   else:
-      analyze(read)
-
-for read in saved_reads:   # second pass
-   if coverage(read, graph) >= DESIRED:
-      analyze(read)
-\end{verbatim}
-Here, the space used for the graph remains identical to the digital
-normalization algorithm and is typically sublinear in space for high
-coverage data sets, but the algorithm is no longer single-pass, and
-requires re-examining some subset of the input data in a second pass.
-In the worst case scenario, with an undersampled source text (or
-randomly generated sentences), this is a fully offline two-pass
-approach that requires re-examining {\em all} of the input data for
-the second pass.  In practice, most real data sets will require fewer
-than two passes: graphically, any deviation from the identity line in
-a saturation analysis as in Figure~\ref{fig:saturation} yields a
-few-pass algorithm.
-
-\paragraph{Reduction to a streaming algorithm:} The semi-streaming
-algorithm can be turned into a purely streaming algorithm in several
-special cases - specifically, whenever reads need not be saved for a
-second pass.  One example is given above, in determining the error
-profile of sequencing reads: here the error profile can be determined
-from only a small portion of the data.
-
-Another example of a purely streaming approach is when some portion of
-correct data can be discarded, e.g. because of oversampling.  (One
-biological application for this occurs when the data set generated is
-large enough to guarantee very high coverage of the entire genome.)
-In this case, rather than saving reads
-for a second pass, only saturated reads are analyzed, while reads that are not from saturated regions in the
-graph are simply discarded.
-Applying this approach to the {\em E. coli} data set used above,
-approximately 1/3 of the reads would be discarded while the remaining
-2/3 would be analyzed (see ``Number of passes'',
-Table~\ref{tab:spectra_streaming_real}).
-
-\paragraph{Summary:} A summary of the three approaches developed above
-is presented in Figure~\ref{fig:summary}.  The two-pass approach in
-Figure~\ref{fig:summary}(a) yields more efficient memory use, but with
-no advantage in execution time.  The few-pass approach
-(Figure~\ref{fig:summary}(b) combines the lower memory use with fewer
-passes across the data, and becomes more efficient as the coverage of
-the data set grows.  Finally, the fully streaming approach in
-Figure~\ref{fig:summary}(c) enables one-pass (or less) approaches for
-certain problems.
 
 \section{Discussion}
 

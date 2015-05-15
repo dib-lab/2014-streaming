@@ -5,6 +5,7 @@ all: 2014-streaming.pdf
 	bibtex 2014-streaming
 	pdflatex 2014-streaming.tex
 	pdflatex 2014-streaming.tex
+	pdflatex 2014-streaming.tex
 
 clean:
 	rm 2014-streaming.pdf *.aux
