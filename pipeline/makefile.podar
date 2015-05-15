@@ -2,6 +2,7 @@ PODAR_COV=20
 
 podar:  podar.1.bt2 \
 	podar_compare2.txt podar_compare4.txt podar_compare5 podar_compare5b
+	podar-compare8.txt
 
 podar.1.bt2: podar-ref.fa
 	bowtie2-build podar-ref.fa podar
@@ -16,6 +17,12 @@ podar-mapped.fq.gz: podar-reads.sam
 podar-reads.sam.pos: podar-reads.sam
 	./sam-scan.py podar-ref.fa podar-reads.sam > podar-reads.sam.pos
 
+podar.kh: podar-mapped.fq.gz
+	load-into-counting.py -x 4e8 -N 4 -k 20 podar.kh podar-mapped.fq.gz
+
+podar-reads-nodn-noV.errors.pos: podar-mapped.fq.gz podar.kh
+	 ./report-errors-by-read.py podar.kh podar-mapped.fq.gz > podar-reads-nodn-noV.errors.pos
+
 podar.dn.kh: podar-mapped.fq.gz
 	 normalize-by-median.py -x 4e8 -N 4 -k 20 -C $(PODAR_COV) -s podar.dn.kh podar-mapped.fq.gz -R podar-dn-report.txt
 
@@ -24,6 +31,9 @@ podar-reads.errors.pos: podar-mapped.fq.gz podar.dn.kh
 
 podar_compare2.txt: podar-reads.errors.pos podar-reads.sam.pos
 	./compare-pos.py -V podar-reads.errors.pos podar-reads.sam.pos podar-mapped.fq.gz > podar_compare2.txt
+
+podar_compare2b.txt: podar-reads-nodn-noV.errors.pos podar-reads.sam.pos
+	./compare-pos.py -V podar-reads-nodn-noV.errors.pos podar-reads.sam.pos podar-mapped.fq.gz > podar_compare2b.txt
 
 podar-stream-mismatches.pos: podar-mapped.fq.gz
 	./calc-errors-few-pass.py -V -x 4e8 -N 4 -k 20 -Z $(PODAR_COV) podar-mapped.fq.gz > podar-stream-mismatches.pos
@@ -87,3 +97,6 @@ podar_compare5b_post.txt: podar-hicov-abundtrim.sam.pos podar-reads.hicov.fq.abu
 
 podar_compare5b: podar_compare5b_pre.txt podar_compare5b_post.txt
 	cat podar_compare5b_pre.txt podar_compare5b_post.txt
+
+podar-compare8.txt: podar-reads.sam podar-abundtrim.sam
+	./sam-calc-refcov-cmp.py podar-ref.fa podar-reads.sam podar-abundtrim.sam > podar-compare8.txt

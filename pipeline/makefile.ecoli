@@ -8,7 +8,8 @@ ecoli: ecoli_compare2.txt ecoli_compare2_nodn.txt ecoli-mapped.fq.gz.errhist \
 	ecoli-mapped.fq.gz.subset.2.errhist \
 	ecoli-mapped.fq.gz.subset.3.errhist \
 	ecoli-mapped.fq.gz.subset.4.errhist \
-	ecoli-mapped.fq.gz.errhist2
+	ecoli-mapped.fq.gz.errhist2 \
+	ecoli-compare8.txt
 
 # bowtie index for ecoliMG1655.fa
 ecoli.1.bt2: ecoliMG1655.fa
@@ -120,6 +121,9 @@ ecoli-counts.txt: ecoli-mapped.fq.gz ecoli_ref.dn.kh ecoli-mapped.fq.gz.keep
 	$(KHMER)/sandbox/unique_kmers.py ecoli-mapped.fq.gz $(ECOLI_K) > ecoli-counts.txt
 	$(KHMER)/sandbox/unique_kmers.py ecoli-mapped.fq.gz.keep $(ECOLI_K) >> ecoli-counts.txt
 
+ecoli-compare8.txt: ecoli-reads.sam ecoli-abundtrim.sam
+	./sam-calc-refcov-cmp.py ecoliMG1655.fa ecoli-reads.sam ecoli-abundtrim.sam > ecoli-compare8.txt
+
 ####
 
 ecoli_corr: ecoli-mapped.raw.cor.fq.gz ecoli-mapped.dn.cor.fq.gz \
@@ -164,3 +168,4 @@ ecoli-reads.raw.cor.sam.pos: ecoli-reads.raw.cor.sam
 
 quake-ecoli-raw-cor.txt: ecoli-reads.raw.cor.sam.pos
 	./summarize-pos-file.py ecoli-reads.raw.cor.sam.pos ecoli-mapped.raw.cor.fq.gz > quake-ecoli-raw-cor.txt
+
