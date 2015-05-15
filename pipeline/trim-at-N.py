@@ -19,19 +19,20 @@ def output_single(read):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('readfile')
+    parser.add_argument('readfiles', nargs='+')
     args = parser.parse_args()
 
-    for record in screed.open(args.readfile):
-        loc = record.sequence.find('N')
-        if loc > -1:
-            record.sequence = record.sequence[:loc]
-            record.quality = record.quality[:loc]
+    for readfile in args.readfiles:
+        for record in screed.open(readfile):
+            loc = record.sequence.find('N')
+            if loc > -1:
+                record.sequence = record.sequence[:loc]
+                record.quality = record.quality[:loc]
 
-            if len(record.sequence) < 32:
-                continue
+                if len(record.sequence) < 32:
+                    continue
 
-        sys.stdout.write(output_single(record))
+            sys.stdout.write(output_single(record))
          
 
 if __name__ == '__main__':
