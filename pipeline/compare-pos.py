@@ -96,7 +96,7 @@ def main():
     for record in screed.open(args.reads):
         total_reads += 1
         if record.name not in ignore_set:
-            all_names.add(record.name)
+            all_names.add(record.name.split()[0])
 
     print >>sys.stderr, 'done!'
     
@@ -141,7 +141,7 @@ def main():
         print 'DDD incorrect in a, correct in b:', \
               incorrect_in_a.intersection(correct_in_b)
 
-    # fn: reads through to be correct by a, but actually erroneous (in b)
+    # fn: reads thought to be correct by a, but actually erroneous (in b)
     fn = len(correct_in_a.intersection(incorrect_in_b))
 
     # tn: reads thought to be correct in both a and b
@@ -159,15 +159,15 @@ def main():
 
     assert n <= total_reads
     assert o <= total_reads
-    assert n_ignored == n_ignoredXX
+# assert n_ignored == n_ignoredXX
     
-    assert len(all_names) == tp + tn + fp + fn, \
-           (len(all_names) - (tp+tn+fp+fn),
-            len(all_names),
-            tp,
-            tn,
-            fp,
-            fn)
+    assert len(all_names) == tp + tn + fp + fn, (
+           len(all_names) - (tp+tn+fp+fn),
+           len(all_names),
+           tp,
+           tn,
+           fp,
+           fn)
     
 if __name__ == '__main__':
     main()

@@ -47,7 +47,7 @@ def main():
 
         errors = []
         for pos, (a, b) in enumerate(zip(ref, seq)):
-            if a != b:
+            if a.upper() != b.upper():
                 # see http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output - '16' is the revcomp flag.
                 if int(flags) & 16:
                     pos = len(seq) - pos - 1

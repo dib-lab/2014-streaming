@@ -51,7 +51,7 @@ def main():
         if n % 100000 == 0:
             print >>sys.stderr, '... readsfile', n
             
-        if record.name in all_readnames:
+        if record.name.split()[0] in all_readnames:
             args.outfile.write(output_single(record))
             m += 1
 

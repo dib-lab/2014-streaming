@@ -70,7 +70,7 @@ def main():
 
     args = parser.parse_args()
 
-    kh = khmer.load_counting_hash(args.table)
+    kh = khmer.load_countgraph(args.table)
     n_skipped_variable = 0
     n_total = 0
 
@@ -96,13 +96,14 @@ def main():
                 varskip = True
                 n_skipped_variable += 1
             
+        name = record.name.split()[0]
         if varskip:
-            print >>args.outfile, record.name, 'V'
+            print >>args.outfile, name, 'V'
         else:
             #posns = find_spectral_error_positions(kh, seq, args.cutoff)
             posns = kh.find_spectral_error_positions(seq, args.cutoff)
             posns = add_n_posns(posns, record.sequence)
-            print >>args.outfile, record.name, ",".join(map(str, posns))
+            print >>args.outfile, name, ",".join(map(str, posns))
 
 
     if args.variable:
