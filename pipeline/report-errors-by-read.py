@@ -85,7 +85,7 @@ def main():
     for n, record in enumerate(screed.open(args.sequences)):
         if n % 100000 == 0:
             print >>sys.stderr, '...', n
-        seq = record.sequence.replace('N', 'A')
+        seq = record.sequence.upper().replace('N', 'A')
 
         n_total += 1
 
